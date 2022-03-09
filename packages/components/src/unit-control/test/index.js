@@ -210,9 +210,9 @@ describe( 'UnitControl', () => {
 
 			const input = getInput();
 			await user.clear( input );
-			await user.type( input, '300px' );
+			await user.type( input, '300' );
 
-			expect( input.value ).toBe( '300px' );
+			expect( input.value ).toBe( '300' );
 			expect( state ).toBe( 50 );
 
 			user.keyboard( '{Escape}' );
@@ -362,94 +362,6 @@ describe( 'UnitControl', () => {
 	} );
 
 	describe( 'Unit Parser', () => {
-		let state = '10px';
-		const setState = jest.fn( ( nextState ) => ( state = nextState ) );
-
-		it( 'should parse unit from input', async () => {
-			const { user } = render(
-				<UnitControl
-					value={ state }
-					onChange={ setState }
-					isPressEnterToChange
-				/>
-			);
-
-			const input = getInput();
-			await user.clear( input );
-			await user.type( input, '55 em' );
-			user.keyboard( '{Enter}' );
-
-			expect( state ).toBe( '55em' );
-		} );
-
-		it( 'should parse PX unit from input', async () => {
-			const { user } = render(
-				<UnitControl
-					value={ state }
-					onChange={ setState }
-					isPressEnterToChange
-				/>
-			);
-
-			const input = getInput();
-			await user.clear( input );
-			await user.type( input, '61   PX' );
-			user.keyboard( '{Enter}' );
-
-			expect( state ).toBe( '61px' );
-		} );
-
-		it( 'should parse EM unit from input', async () => {
-			const { user } = render(
-				<UnitControl
-					value={ state }
-					onChange={ setState }
-					isPressEnterToChange
-				/>
-			);
-
-			const input = getInput();
-			await user.clear( input );
-			await user.type( input, '55 em' );
-			user.keyboard( '{Enter}' );
-
-			expect( state ).toBe( '55em' );
-		} );
-
-		it( 'should parse % unit from input', async () => {
-			const { user } = render(
-				<UnitControl
-					value={ state }
-					onChange={ setState }
-					isPressEnterToChange
-				/>
-			);
-
-			const input = getInput();
-			await user.clear( input );
-			await user.type( input, '-10  %' );
-			user.keyboard( '{Enter}' );
-
-			expect( state ).toBe( '-10%' );
-		} );
-
-		it( 'should parse REM unit from input', async () => {
-			const { user } = render(
-				<UnitControl
-					value={ state }
-					onChange={ setState }
-					isPressEnterToChange
-				/>
-			);
-
-			const input = getInput();
-			await user.clear( input );
-			await user.type( input, '123       rEm  ' );
-			user.keyboard( '{Enter}' );
-
-			expect( state ).toBe( '123rem' );
-		} );
-
 		it( 'should update unit after initial render and with new unit prop', () => {
 			const { rerender } = render( <UnitControl value={ '10%' } /> );
 
@@ -484,6 +396,20 @@ describe( 'UnitControl', () => {
 
 			expect( select.value ).toBe( '%' );
 			expect( options.length ).toBe( 3 );
+		} );
+	} );
+
+	describe( 'Unit switching convenience', () => {
+		it( 'should focus unit select when a charater matches the first of one of the units', async () => {
+			const { user } = render(
+				<UnitControl value={ '10%' } />
+			);
+
+			const input = getInput();
+			await user.clear( input );
+			await user.type( input, '55 e' );
+
+			expect( document.activeElement ).toBe( getSelect() );
 		} );
 	} );
 } );
