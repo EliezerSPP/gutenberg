@@ -25,6 +25,7 @@ function ReadOnlyContent( {
 	userCanEdit,
 	postType,
 	postId,
+	tagName: TagName = 'div',
 } ) {
 	const [ , , content ] = useEntityProp(
 		'postType',
@@ -34,18 +35,18 @@ function ReadOnlyContent( {
 	);
 	const blockProps = useBlockProps( { className: layoutClassNames } );
 	return content?.protected && ! userCanEdit ? (
-		<div { ...blockProps }>
+		<TagName { ...blockProps }>
 			<Warning>{ __( 'This content is password protected.' ) }</Warning>
-		</div>
+		</TagName>
 	) : (
-		<div
+		<TagName
 			{ ...blockProps }
 			dangerouslySetInnerHTML={ { __html: content?.rendered } }
-		></div>
+		></TagName>
 	);
 }
 
-function EditableContent( { context = {} } ) {
+function EditableContent( { context = {}, tagName: TagName = 'div' } ) {
 	const { postType, postId } = context;
 
 	const [ blocks, onInput, onChange ] = useEntityBlockEditor(
@@ -78,11 +79,11 @@ function EditableContent( { context = {} } ) {
 			template: ! hasInnerBlocks ? initialInnerBlocks : undefined,
 		}
 	);
-	return <div { ...props } />;
+	return <TagName { ...props } />;
 }
 
 function Content( props ) {
-	const { context: { queryId, postType, postId } = {}, layoutClassNames } =
+	const { context: { queryId, postType, postId } = {}, layoutClassNames, tagName } =
 		props;
 	const userCanEdit = useCanEditEntity( 'postType', postType, postId );
 	if ( userCanEdit === undefined ) {
@@ -100,6 +101,7 @@ function Content( props ) {
 			userCanEdit={ userCanEdit }
 			postType={ postType }
 			postId={ postId }
+			tagName={ tagName }
 		/>
 	);
 }
@@ -138,9 +140,51 @@ function RecursionError() {
 	);
 }
 
+/**
+ * Render inspector controls for the PostContent block.
+ *
+ * @param {Object}   props                 Component props.
+ * @param {string}   props.tagName         The HTML tag name.
+ * @param {Function} props.onSelectTagName onChange function for the SelectControl.
+ *
+ * @return {JSX.Element}                The control group.
+ */
+function PostContentEditControls( { tagName, onSelectTagName } ) {
+	const htmlElementMessages = {
+		main: __(
+			'The <main> element should be used for the primary content of your document only. '
+		),
+		section: __(
+			"The <section> element should represent a standalone portion of the document that can't be better represented by another element."
+		),
+		article: __(
+			'The <article> element should represent a self-contained, syndicatable portion of the document.'
+		),
+	};
+	return (
+		<InspectorControls group="advanced">
+			<SelectControl
+				__nextHasNoMarginBottom
+				label={ __( 'HTML element' ) }
+				options={ [
+					{ label: __( 'Default (<div>)' ), value: 'div' },
+					{ label: '<main>', value: 'main' },
+					{ label: '<section>', value: 'section' },
+					{ label: '<article>', value: 'article' },
+				] }
+				value={ tagName }
+				onChange={ onSelectTagName }
+				help={ htmlElementMessages[ tagName ] }
+			/>
+		</InspectorControls>
+	);
+}
+
 export default function PostContentEdit( {
 	context,
 	__unstableLayoutClassNames: layoutClassNames,
+	attributes: { tagName = 'div' },
+	setAttributes,
 } ) {
 	const { postId: contextPostId, postType: contextPostType } = context;
 	const hasAlreadyRendered = useHasRecursion( contextPostId );
@@ -150,15 +194,24 @@ export default function PostContentEdit( {
 	}
 
 	return (
-		<RecursionProvider uniqueId={ contextPostId }>
-			{ contextPostId && contextPostType ? (
-				<Content
-					context={ context }
-					layoutClassNames={ layoutClassNames }
-				/>
-			) : (
-				<Placeholder layoutClassNames={ layoutClassNames } />
-			) }
-		</RecursionProvider>
+		<>
+			<PostContentEditControls
+				tagName={ TagName }
+				onSelectTagName={ ( value ) =>
+					setAttributes( { tagName: value } )
+				}
+			/>
+			<RecursionProvider uniqueId={ contextPostId }>
+				{ contextPostId && contextPostType ? (
+					<Content
+						context={ context }
+						layoutClassNames={layoutClassNames}
+						tagName={ tagName }
+					/>
+				) : (
+					<Placeholder layoutClassNames={ layoutClassNames } />
+				) }
+			</RecursionProvider>
+		</>
 	);
 }
